@@ -29,9 +29,11 @@ public class Cliente {
                 if(resposta){
                     System.out.println("Escrita bem sucedida");
                 }
+                entrada.next();
             } else if (operacao== 2){
                 String sresposta = stub.leitura(arquivo,100,0);
                 System.out.println(sresposta);
+                entrada.next();
             }
         } catch (Exception e) {
             System.err.println("Capturando a exceção no Cliente: " + e.toString());
