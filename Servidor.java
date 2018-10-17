@@ -1,7 +1,8 @@
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -11,9 +12,9 @@ public class Servidor implements ClienteServidor {
 
     private int readCount1,readCount2,readCount3;
     private boolean estaLendo1,estaLendo2,estaLendo3;
-    private static final int PERMISSAOLEITURA = 3;
-    private static final int PERMISSAOESCRITA = 1;
-    private static final boolean PRIORIDADENORMAL = true;
+    private final int PERMISSAOLEITURA = 3;
+    private final int PERMISSAOESCRITA = 1;
+    private final boolean PRIORIDADENORMAL = true;
     private Semaphore leitura1 = new Semaphore(PERMISSAOLEITURA, true) ,escrita1 = new Semaphore(PERMISSAOESCRITA, true) ;
     private Semaphore leitura2 = new Semaphore(PERMISSAOLEITURA, true) ,escrita2 = new Semaphore(PERMISSAOESCRITA, true) ;
     private Semaphore leitura3 = new Semaphore(PERMISSAOLEITURA, true) ,escrita3 = new Semaphore(PERMISSAOESCRITA, true) ;
@@ -129,18 +130,16 @@ public class Servidor implements ClienteServidor {
 
 
 
-    public String leituraArquivo(String caminho, int caracteres, int offset) throws IOException {
-        FileReader arquivo = new FileReader(caminho, StandardCharsets.UTF_8);
-        char[] retornochar = new char[caracteres];
-        int stat = arquivo.read(retornochar, offset, caracteres);
-        arquivo.close();
-        if(stat == -1){
-            return "Não foi possível fazer leitura";
-        } else {
-            return new String(retornochar);
+    public String leituraArquivo(String caminho) throws IOException {
+        try {
+            byte[] encoded = Files.readAllBytes(Paths.get(caminho));
+            return new String(encoded, StandardCharsets.UTF_8);
+        }
+        catch (Exception e){
+            return "Não foi possivel fazer leitura";
         }
     }
-    public String leitura(String caminho, int caracteres, int offset){
+    public String leitura(String caminho){
         try {
             String saida;//verifica o arquivo
             if(caminho.charAt(3) == '1'){
@@ -159,7 +158,7 @@ public class Servidor implements ClienteServidor {
                     }
                 }
                 //faz a leitura
-                saida = leituraArquivo(caminho, caracteres, offset);
+                saida = leituraArquivo(caminho);
 
 
                 //libera o arquivo 1
@@ -194,7 +193,7 @@ public class Servidor implements ClienteServidor {
                 }
 
                 //faz a leitura
-                saida = leituraArquivo(caminho, caracteres, offset);
+                saida = leituraArquivo(caminho);
 
 
                 //libera o arquivo 2
@@ -233,7 +232,7 @@ public class Servidor implements ClienteServidor {
 
 
                 //faz a leitura
-                saida = leituraArquivo(caminho, caracteres, offset);
+                saida = leituraArquivo(caminho);
 
 
                 //libera o arquivo 3
