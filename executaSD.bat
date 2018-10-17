@@ -4,7 +4,7 @@ Javac Cliente.java
 Rmic Servidor
 start rmiregistry
 start java Servidor
-timeout 1
+timeout 2
 start java Cliente
 start java Cliente
 start java Cliente
