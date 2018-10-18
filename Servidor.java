@@ -10,7 +10,7 @@ import java.util.concurrent.Semaphore;
 
 public class Servidor implements ClienteServidor {
 
-    private final boolean PRIORIDADENORMAL = false;
+    private final boolean PRIORIDADENORMAL = true;
     private boolean [] estaLendo;
     private int [] readCount;
     private Semaphore []leitura, escrita;
@@ -21,15 +21,15 @@ public class Servidor implements ClienteServidor {
 
         int PERMISSAOLEITURA = 3;
         leitura = new Semaphore [] {
-                    new Semaphore(PERMISSAOLEITURA, false),
-                    new Semaphore(PERMISSAOLEITURA, false),
-                    new Semaphore(PERMISSAOLEITURA, false)};
+                    new Semaphore(PERMISSAOLEITURA, true),
+                    new Semaphore(PERMISSAOLEITURA, true),
+                    new Semaphore(PERMISSAOLEITURA, true)};
 
         int PERMISSAOESCRITA = 1;
         escrita = new Semaphore[] {
-                    new Semaphore(PERMISSAOESCRITA, false),
-                    new Semaphore(PERMISSAOESCRITA, false),
-                    new Semaphore(PERMISSAOESCRITA, false)};
+                    new Semaphore(PERMISSAOESCRITA, true),
+                    new Semaphore(PERMISSAOESCRITA, true),
+                    new Semaphore(PERMISSAOESCRITA, true)};
     }
 
     private void escritaArquivo(String caminho, String dado) throws IOException {
@@ -48,16 +48,18 @@ public class Servidor implements ClienteServidor {
                 //verifica readcount ou define que esta lendo
                 if(this.PRIORIDADENORMAL){
                     this.escrita[num].acquire(1);
-                    this.estaLendo[num]=true;
                     this.leitura[num].acquire(3);
+                    //this.estaLendo[num]=true;
                 }
                 else{
                     int SLEEP_TIME = 2000;
-                    while(System.currentTimeMillis() < ultimoTempo[num] + SLEEP_TIME || this.readCount[num] !=0){
-                        if(System.currentTimeMillis() >= ultimoTempo[num] + SLEEP_TIME){
-                            ultimoTempo[num] = System.currentTimeMillis();
+                    do{
+						ultimoTempo[num]=System.currentTimeMillis();
+                        while(System.currentTimeMillis()<=ultimoTempo[num]+SLEEP_TIME){
+                            Thread.sleep(1);
                         }
-                    }
+                        ultimoTempo[num]=System.currentTimeMillis();
+                    }while(this.readCount[num]>0);
                     this.escrita[num].acquire(1);
                     this.leitura[num].acquire(3);
                 }
@@ -65,6 +67,9 @@ public class Servidor implements ClienteServidor {
                 //faz a escrita
                 escritaArquivo(caminho, dado);
 
+                //tempo de escrita
+                Thread.sleep(1000);
+				
                 //libera o arquivo 1
                 if(this.PRIORIDADENORMAL){
                     this.estaLendo[num]=false;
@@ -99,9 +104,11 @@ public class Servidor implements ClienteServidor {
                 String saida;
                 //trava o arquivo 1 para a leitura
                 if(this.PRIORIDADENORMAL){
-                    while(this.estaLendo[num]){}
-                    this.leitura[num].acquire(1);
+                    /*while(this.estaLendo[num]){
+						Thread.sleep(1);
+					}*/
                     this.escrita[num].acquire(1);
+                    this.leitura[num].acquire(1);
 
                 }
                 else {
@@ -115,6 +122,9 @@ public class Servidor implements ClienteServidor {
                 saida = leituraArquivo(caminho);
 
 
+                //tempo de leitura
+                Thread.sleep(500);
+				
                 //libera o arquivo 1
                 this.leitura[num].release(1);
                 if(PRIORIDADENORMAL){
