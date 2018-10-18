@@ -7,150 +7,83 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 public class Servidor implements ClienteServidor {
 
-    private static int readCount1,readCount2,readCount3;
-    private boolean estaLendo1,estaLendo2,estaLendo3;
-    private final int PERMISSAOLEITURA = 3;
-    private final int PERMISSAOESCRITA = 1;
     private final boolean PRIORIDADENORMAL = false;
-    private Semaphore leitura1 = new Semaphore(PERMISSAOLEITURA, false) ,escrita1 = new Semaphore(PERMISSAOESCRITA, false) ;
-    private Semaphore leitura2 = new Semaphore(PERMISSAOLEITURA, false) ,escrita2 = new Semaphore(PERMISSAOESCRITA, false) ;
-    private Semaphore leitura3 = new Semaphore(PERMISSAOLEITURA, false) ,escrita3 = new Semaphore(PERMISSAOESCRITA, false) ;
-    private final int SLEEP_TIME = 2000;
+    private boolean [] estaLendo;
+    private int [] readCount;
+    private Semaphore []leitura, escrita;
 
     public Servidor() {
-        readCount1=0;
-        readCount2=0;
-        readCount3=0;
-        estaLendo1=false;
-        estaLendo2=false;
-        estaLendo3=false;
+        readCount= new int[] {0, 0, 0};
+        estaLendo = new boolean[] {false, false, false};
+
+        int PERMISSAOLEITURA = 3;
+        leitura = new Semaphore [] {
+                    new Semaphore(PERMISSAOLEITURA, false),
+                    new Semaphore(PERMISSAOLEITURA, false),
+                    new Semaphore(PERMISSAOLEITURA, false)};
+
+        int PERMISSAOESCRITA = 1;
+        escrita = new Semaphore[] {
+                    new Semaphore(PERMISSAOESCRITA, false),
+                    new Semaphore(PERMISSAOESCRITA, false),
+                    new Semaphore(PERMISSAOESCRITA, false)};
     }
 
-
-
-
-    public void escritaArquivo(String caminho, String dado) throws IOException {
+    private void escritaArquivo(String caminho, String dado) throws IOException {
         FileWriter arquivo = new FileWriter(caminho, StandardCharsets.UTF_8);
         arquivo.append(dado);
         arquivo.close();
     }
-    public boolean escrita(String caminho, String dado){
 
-        int continua=0;
-        long ultimoTempo1=System.currentTimeMillis();
-        long ultimoTempo2=System.currentTimeMillis();
-        long ultimoTempo3=System.currentTimeMillis();
+    public boolean escrita(String caminho, String dado) {
+
+        long [] ultimoTempo= new long[] {System.currentTimeMillis(), System.currentTimeMillis(), System.currentTimeMillis()};
         try {
-            //verifica o arquivo
-            if(caminho.charAt(3) == '1'){
+            int num = Character.getNumericValue(caminho.charAt(3)) - 1;
+            //verifica se o arquivo existe
+            if (num <= 2 && num >= 0) {
                 //verifica readcount ou define que esta lendo
-                if(PRIORIDADENORMAL){
-                    escrita1.acquire(1);
-                    estaLendo1=true;
-                    leitura1.acquire(3);
+                if(this.PRIORIDADENORMAL){
+                    this.escrita[num].acquire(1);
+                    this.estaLendo[num]=true;
+                    this.leitura[num].acquire(3);
                 }
                 else{
-                    while(System.currentTimeMillis() <ultimoTempo1 + SLEEP_TIME || readCount1!=0){
-                        if(System.currentTimeMillis() >=ultimoTempo1 + SLEEP_TIME){
-                            ultimoTempo1 = System.currentTimeMillis();
+                    int SLEEP_TIME = 2000;
+                    while(System.currentTimeMillis() < ultimoTempo[num] + SLEEP_TIME || this.readCount[num] !=0){
+                        if(System.currentTimeMillis() >= ultimoTempo[num] + SLEEP_TIME){
+                            ultimoTempo[num] = System.currentTimeMillis();
                         }
                     }
-                    escrita1.acquire(1);
-                    leitura1.acquire(3);
+                    this.escrita[num].acquire(1);
+                    this.leitura[num].acquire(3);
                 }
-
 
                 //faz a escrita
                 escritaArquivo(caminho, dado);
 
                 //libera o arquivo 1
-                if(PRIORIDADENORMAL){
-                    estaLendo1=false;
+                if(this.PRIORIDADENORMAL){
+                    this.estaLendo[num]=false;
                 }
-                leitura1.release(3);
-                escrita1.release(1);
 
+                this.leitura[num].release(3);
+                this.escrita[num].release(1);
 
                 return true;
             }
-            if(caminho.charAt(3) == '2'){
-                //verifica readcount ou define que esta lendo
-                if(PRIORIDADENORMAL){
-                    escrita2.acquire(1);
-                    estaLendo2=true;
-                    leitura2.acquire(3);
-                }
-                else{
-                    while(System.currentTimeMillis() <ultimoTempo2 + SLEEP_TIME || readCount2!=0){
-                        if(System.currentTimeMillis() >=ultimoTempo2 + SLEEP_TIME){
-                            ultimoTempo2 = System.currentTimeMillis();
-                        }
-                    }
-                    escrita2.acquire(1);
-                    leitura2.acquire(3);
 
-                }
-
-
-                //faz a escrita
-                escritaArquivo(caminho, dado);
-
-                //libera o arquivo 2
-                if(PRIORIDADENORMAL){
-                    estaLendo2=false;
-                }
-                leitura2.release(3);
-                escrita2.release(1);
-
-                return true;
-
-            }
-            if(caminho.charAt(3) == '3'){
-                //verifica readcount ou define que esta lendo
-                if(PRIORIDADENORMAL){
-                    escrita3.acquire(1);
-                    estaLendo3=true;
-                    leitura3.acquire(3);
-                }
-                else{
-                    while(System.currentTimeMillis() <ultimoTempo3 + SLEEP_TIME || readCount3!=0) {
-                        if (System.currentTimeMillis() >= ultimoTempo3 + SLEEP_TIME) {
-                            ultimoTempo3 = System.currentTimeMillis();
-                        }
-                    }
-                    escrita3.acquire(1);
-                    leitura3.acquire(3);
-                }
-
-
-                //faz a escrita
-                escritaArquivo(caminho, dado);
-
-                //libera o arquivo 3
-                if(PRIORIDADENORMAL){
-                    estaLendo3=false;
-                }
-                leitura3.release(3);
-                escrita3.release(1);
-
-                return true;
-
-            }
             return false;
-
         } catch (Exception e){
             e.printStackTrace();
             return false;
         }
     }
 
-
-
-    public String leituraArquivo(String caminho) throws IOException {
+    private String leituraArquivo(String caminho) {
         try {
             byte[] encoded = Files.readAllBytes(Paths.get(caminho));
             return new String(encoded, StandardCharsets.UTF_8);
@@ -161,20 +94,21 @@ public class Servidor implements ClienteServidor {
     }
     public String leitura(String caminho){
         try {
-            String saida;//verifica o arquivo
-            if(caminho.charAt(3) == '1'){
+            int num = Character.getNumericValue(caminho.charAt(3)) - 1;
+            if (num <= 2 && num >= 0){
+                String saida;
                 //trava o arquivo 1 para a leitura
-                if(PRIORIDADENORMAL){
-                    while(estaLendo1){}
-                    leitura1.acquire(1);
-                    escrita1.acquire(1);
+                if(this.PRIORIDADENORMAL){
+                    while(this.estaLendo[num]){}
+                    this.leitura[num].acquire(1);
+                    this.escrita[num].acquire(1);
 
                 }
                 else {
                     //verifica readcount
-                    readCount1+=1;
-                    if(readCount1==1) {
-                        escrita1.acquire(1);
+                    this.readCount[num] += 1;
+                    if(this.readCount[num] == 1) {
+                        this.escrita[num].acquire(1);
                     }
                 }
                 //faz a leitura
@@ -182,99 +116,21 @@ public class Servidor implements ClienteServidor {
 
 
                 //libera o arquivo 1
-                leitura1.release(1);
+                this.leitura[num].release(1);
                 if(PRIORIDADENORMAL){
-                    escrita1.release(1);
+                    this.escrita[num].release(1);
 
                 }
                 else {
                     //verifica readcount
-                    readCount1-=1;
-                    if(readCount1==0) {
-                        escrita1.release(1);
+                    this.readCount[num] -= 1;
+                    if(this.readCount[num] == 0) {
+                        this.escrita[num].release(1);
                     }
                 }
                 return saida;
-            }
-            if(caminho.charAt(3) == '2'){
-                //trava o arquivo 2 para a leitura
-                if(PRIORIDADENORMAL){
-                    while(estaLendo2){}
-                    leitura2.acquire(1);
-                    escrita2.acquire(1);
-
-                }
-                else {
-                    //verifica readcount
-                    readCount2+=1;
-                    if(readCount2==1) {
-                        escrita2.acquire(1);
-                    }
-                }
-
-                //faz a leitura
-                saida = leituraArquivo(caminho);
-
-
-                //libera o arquivo 2
-                leitura2.release(1);
-                if(PRIORIDADENORMAL){
-                    escrita2.release(1);
-
-                }
-                else {
-                    //verifica readcount
-                    readCount2-=1;
-                    if(readCount2==0) {
-                        escrita2.release(1);
-                    }
-                }
-
-
-                return saida;
-
-            }
-            if(caminho.charAt(3) == '3'){
-                //trava o arquivo 3 para a leitura
-                if(PRIORIDADENORMAL){
-                    while(estaLendo3){}
-                    leitura3.acquire(1);
-                    escrita3.acquire(1);
-
-                }
-                else {
-                    //verifica readcount
-                    readCount3+=1;
-                    if(readCount3==1) {
-                        escrita3.acquire(1);
-                    }
-                }
-
-
-                //faz a leitura
-                saida = leituraArquivo(caminho);
-
-
-                //libera o arquivo 3
-                leitura3.release(1);
-                if(PRIORIDADENORMAL){
-                    escrita3.release(1);
-
-                }
-                else {
-                    //verifica readcount
-                    readCount3-=1;
-                    if(readCount3==0) {
-                        escrita3.release(1);
-                    }
-                }
-
-
-
-                return saida;
-
-            }
-            return "Arquivo invalido";
+            } else
+                return "Arquivo invalido";
         } catch (Exception e){
             e.printStackTrace();
             return "Exceção levantada";
@@ -293,5 +149,4 @@ public class Servidor implements ClienteServidor {
             e.printStackTrace();
         }
     }
-
 }

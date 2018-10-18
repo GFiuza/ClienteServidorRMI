@@ -1,7 +1,5 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.FileWriter;
-import java.nio.charset.StandardCharsets;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Scanner;
