@@ -1,0 +1,2 @@
+
+Piet is a programming language in which programs look like abstract paintings. The language is named after Piet Mondrian, who pioneered the field of geometric abstract art. I would have liked to call the language Mondrian, but someone beat me to it with a rather mundane-looking scripting language. Oh well, we can't all be esoteric language writers I suppose.

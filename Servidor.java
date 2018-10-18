@@ -7,17 +7,19 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 public class Servidor implements ClienteServidor {
 
-    private int readCount1,readCount2,readCount3;
+    private static int readCount1,readCount2,readCount3;
     private boolean estaLendo1,estaLendo2,estaLendo3;
     private final int PERMISSAOLEITURA = 3;
     private final int PERMISSAOESCRITA = 1;
-    private final boolean PRIORIDADENORMAL = true;
-    private Semaphore leitura1 = new Semaphore(PERMISSAOLEITURA, true) ,escrita1 = new Semaphore(PERMISSAOESCRITA, true) ;
-    private Semaphore leitura2 = new Semaphore(PERMISSAOLEITURA, true) ,escrita2 = new Semaphore(PERMISSAOESCRITA, true) ;
-    private Semaphore leitura3 = new Semaphore(PERMISSAOLEITURA, true) ,escrita3 = new Semaphore(PERMISSAOESCRITA, true) ;
+    private final boolean PRIORIDADENORMAL = false;
+    private Semaphore leitura1 = new Semaphore(PERMISSAOLEITURA, false) ,escrita1 = new Semaphore(PERMISSAOESCRITA, false) ;
+    private Semaphore leitura2 = new Semaphore(PERMISSAOLEITURA, false) ,escrita2 = new Semaphore(PERMISSAOESCRITA, false) ;
+    private Semaphore leitura3 = new Semaphore(PERMISSAOLEITURA, false) ,escrita3 = new Semaphore(PERMISSAOESCRITA, false) ;
+    private final int SLEEP_TIME = 2000;
 
     public Servidor() {
         readCount1=0;
@@ -37,6 +39,11 @@ public class Servidor implements ClienteServidor {
         arquivo.close();
     }
     public boolean escrita(String caminho, String dado){
+
+        int continua=0;
+        long ultimoTempo1=System.currentTimeMillis();
+        long ultimoTempo2=System.currentTimeMillis();
+        long ultimoTempo3=System.currentTimeMillis();
         try {
             //verifica o arquivo
             if(caminho.charAt(3) == '1'){
@@ -47,9 +54,13 @@ public class Servidor implements ClienteServidor {
                     leitura1.acquire(3);
                 }
                 else{
-                    while(readCount1!=0){}
-                    leitura1.acquire(3);
+                    while(System.currentTimeMillis() <ultimoTempo1 + SLEEP_TIME || readCount1!=0){
+                        if(System.currentTimeMillis() >=ultimoTempo1 + SLEEP_TIME){
+                            ultimoTempo1 = System.currentTimeMillis();
+                        }
+                    }
                     escrita1.acquire(1);
+                    leitura1.acquire(3);
                 }
 
 
@@ -74,9 +85,14 @@ public class Servidor implements ClienteServidor {
                     leitura2.acquire(3);
                 }
                 else{
-                    while(readCount2!=0){}
-                    leitura2.acquire(3);
+                    while(System.currentTimeMillis() <ultimoTempo2 + SLEEP_TIME || readCount2!=0){
+                        if(System.currentTimeMillis() >=ultimoTempo2 + SLEEP_TIME){
+                            ultimoTempo2 = System.currentTimeMillis();
+                        }
+                    }
                     escrita2.acquire(1);
+                    leitura2.acquire(3);
+
                 }
 
 
@@ -101,9 +117,13 @@ public class Servidor implements ClienteServidor {
                     leitura3.acquire(3);
                 }
                 else{
-                    while(readCount3!=0){}
-                    leitura3.acquire(3);
+                    while(System.currentTimeMillis() <ultimoTempo3 + SLEEP_TIME || readCount3!=0) {
+                        if (System.currentTimeMillis() >= ultimoTempo3 + SLEEP_TIME) {
+                            ultimoTempo3 = System.currentTimeMillis();
+                        }
+                    }
                     escrita3.acquire(1);
+                    leitura3.acquire(3);
                 }
 
 
