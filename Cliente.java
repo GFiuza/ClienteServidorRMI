@@ -3,6 +3,7 @@ import java.io.FileReader;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Scanner;
+import java.util.Random;
 
 public class Cliente {
 
@@ -16,40 +17,52 @@ public class Cliente {
             ClienteServidor stub = (ClienteServidor) registry.lookup("ClienteServidor");
 
             Scanner entrada = new Scanner(System.in);
+            
 
-            String arquivo;
+			String[] tiposCaracteres = new String[3];
+			tiposCaracteres[0] = "abcdefghijklmnopqrstuvwxyz";
+			tiposCaracteres[1] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+			tiposCaracteres[2] = "0123456789";
+			
+			String escrever = new String();
+			
+			String arquivo;
+			
+			Random gerador = new Random();
+			
+			for(int i=0;i<10;i++) {
+				int escolha = gerador.nextInt(3) + 1;
 
-            BufferedReader arquivoComandos = new BufferedReader(new FileReader(args[0]));
-            String linha=arquivoComandos.readLine();
-            while(linha!=null){
-                //define o arquivo que vai ler
-                arquivo = "arq" + linha + ".txt";
+				arquivo = "arq" + escolha + ".txt";
+				
+				escolha = gerador.nextInt(2) + 1;
+				
+				if(escolha == 1) {
+					int tamanho = gerador.nextInt(100) + 1;
+					for(int j=0;j<tamanho;j++) {
+						int casa = gerador.nextInt(3);
+						int index;
+						if(casa == 2){
+							index = gerador.nextInt(10);
+						}
+						else {
+							index = gerador.nextInt(26);
+						}
+						escrever += tiposCaracteres[casa].charAt(index);
+					}
+					System.out.println("Palavra a ser escrita: " + escrever);
+						
+	                boolean resposta = stub.escrita(arquivo, escrever);
 
-                linha=arquivoComandos.readLine();
-
-                //define o comando que vai ser feito
-                //leitura
-                if(linha.equals("2")){
-                    String sresposta = stub.leitura(arquivo);
+	                if(resposta){
+	                    System.out.println("Escrita bem sucedida");
+	                }
+				}
+				else {
+					String sresposta = stub.leitura(arquivo);
                     System.out.println(sresposta);
-
-                }
-                //escrita
-                else{
-                    //le os dados a serem escritos
-                    linha=arquivoComandos.readLine();
-
-                    boolean resposta = stub.escrita(arquivo, linha);
-
-                    if(resposta){
-                        System.out.println("Escrita bem sucedida");
-                    }
-                }
-
-                linha=arquivoComandos.readLine();
-            }
-
-            entrada.nextInt();
+				}
+			}
             /*int ainda = 1;
             while (ainda == 1)
             {
