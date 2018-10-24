@@ -17,7 +17,6 @@ public class Servidor implements ClienteServidor {
 
     public Servidor() {
         readCount= new int[] {0, 0, 0};
-        estaLendo = new boolean[] {false, false, false};
 
         int PERMISSAOLEITURA = 3;
         leitura = new Semaphore [] {
@@ -46,12 +45,12 @@ public class Servidor implements ClienteServidor {
             //verifica se o arquivo existe
             if (num <= 2 && num >= 0) {
                 //verifica readcount ou define que esta lendo
-                if(this.PRIORIDADENORMAL){
-                    this.escrita[num].acquire(1);
-                    this.leitura[num].acquire(3);
+                /*if(this.PRIORIDADENORMAL){
+
+                    //this.leitura[num].acquire(3);
                     //this.estaLendo[num]=true;
-                }
-                else{
+                }*/
+                if(!this.PRIORIDADENORMAL){
                     int SLEEP_TIME = 2000;
                     do{
 						ultimoTempo[num]=System.currentTimeMillis();
@@ -60,10 +59,10 @@ public class Servidor implements ClienteServidor {
                         }
                         ultimoTempo[num]=System.currentTimeMillis();
                     }while(this.readCount[num]>0);
-                    this.escrita[num].acquire(1);
-                    this.leitura[num].acquire(3);
+                    //this.escrita[num].acquire(1);
+                    //this.leitura[num].acquire(3);
                 }
-
+                this.escrita[num].acquire(1);
                 //faz a escrita
                 escritaArquivo(caminho, dado);
 
@@ -71,11 +70,7 @@ public class Servidor implements ClienteServidor {
                 Thread.sleep(1000);
 				
                 //libera o arquivo 1
-                if(this.PRIORIDADENORMAL){
-                    this.estaLendo[num]=false;
-                }
-
-                this.leitura[num].release(3);
+                //this.leitura[num].release(3);
                 this.escrita[num].release(1);
 
                 return true;
@@ -103,12 +98,12 @@ public class Servidor implements ClienteServidor {
             if (num <= 2 && num >= 0){
                 String saida;
                 //trava o arquivo 1 para a leitura
-                if(this.PRIORIDADENORMAL){
+                if(this.PRIORIDADENORMAL) {
                     /*while(this.estaLendo[num]){
 						Thread.sleep(1);
 					}*/
                     this.escrita[num].acquire(1);
-                    this.leitura[num].acquire(1);
+                    //this.leitura[num].acquire(1);
 
                 }
                 else {
@@ -126,7 +121,7 @@ public class Servidor implements ClienteServidor {
                 Thread.sleep(500);
 				
                 //libera o arquivo 1
-                this.leitura[num].release(1);
+                //this.leitura[num].release(1);
                 if(PRIORIDADENORMAL){
                     this.escrita[num].release(1);
 
