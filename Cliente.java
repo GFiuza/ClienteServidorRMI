@@ -10,7 +10,6 @@ public class Cliente {
     private Cliente() {}
 
     public static void main(String[] args) {
-        System.out.println(args[0]);
         String host = (args.length < 1) ? null : null;//args[0];
         try {
             Registry registry = LocateRegistry.getRegistry(host);
