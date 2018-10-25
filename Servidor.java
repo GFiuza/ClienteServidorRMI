@@ -7,10 +7,13 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.Semaphore;
+import java.rmi.server.RemoteServer;
+import java.rmi.server.ServerNotActiveException;
+
 
 public class Servidor implements ClienteServidor {
 
-    private final boolean PRIORIDADENORMAL = true;
+    private static boolean PRIORIDADENORMAL;
     private boolean [] estaLendo;
     private int [] readCount;
     private Semaphore []leitura, escrita;
@@ -37,10 +40,11 @@ public class Servidor implements ClienteServidor {
         arquivo.close();
     }
 
-    public boolean escrita(String caminho, String dado) {
+    public boolean escrita(String caminho, String dado, int id){
 
         long [] ultimoTempo= new long[] {System.currentTimeMillis(), System.currentTimeMillis(), System.currentTimeMillis()};
         try {
+			System.out.println("Escrita do arquivo " + caminho.charAt(3) +" comecada cliente:" + id);
             int num = Character.getNumericValue(caminho.charAt(3)) - 1;
             //verifica se o arquivo existe
             if (num <= 2 && num >= 0) {
@@ -59,10 +63,11 @@ public class Servidor implements ClienteServidor {
                         }
                         ultimoTempo[num]=System.currentTimeMillis();
                     }while(this.readCount[num]>0);
-                    //this.escrita[num].acquire(1);
+                    this.escrita[num].acquire(1);
                     //this.leitura[num].acquire(3);
-                }
-                this.escrita[num].acquire(1);
+                } else {
+					this.leitura[num].acquire(3);
+				}
                 //faz a escrita
                 escritaArquivo(caminho, dado);
 
@@ -71,8 +76,13 @@ public class Servidor implements ClienteServidor {
 				
                 //libera o arquivo 1
                 //this.leitura[num].release(3);
-                this.escrita[num].release(1);
-
+                if (!this.PRIORIDADENORMAL)
+					this.escrita[num].release(1);
+				else
+					this.leitura[num].release(3);
+				
+				System.out.println("Escrita do arquivo " + caminho.charAt(3) +" concluida pelo cliente:" + id);
+			
                 return true;
             }
 
@@ -92,8 +102,9 @@ public class Servidor implements ClienteServidor {
             return "Não foi possivel fazer leitura";
         }
     }
-    public String leitura(String caminho){
+    public String leitura(String caminho,int id){
         try {
+			System.out.println("Leitura no arquivo " + caminho.charAt(3) + " comecada por cliente:" + id);
             int num = Character.getNumericValue(caminho.charAt(3)) - 1;
             if (num <= 2 && num >= 0){
                 String saida;
@@ -102,8 +113,8 @@ public class Servidor implements ClienteServidor {
                     /*while(this.estaLendo[num]){
 						Thread.sleep(1);
 					}*/
-                    this.escrita[num].acquire(1);
-                    //this.leitura[num].acquire(1);
+                    //this.escrita[num].acquire(1);
+                    this.leitura[num].acquire(1);
 
                 }
                 else {
@@ -123,7 +134,7 @@ public class Servidor implements ClienteServidor {
                 //libera o arquivo 1
                 //this.leitura[num].release(1);
                 if(PRIORIDADENORMAL){
-                    this.escrita[num].release(1);
+                    this.leitura[num].release(1);
 
                 }
                 else {
@@ -133,6 +144,7 @@ public class Servidor implements ClienteServidor {
                         this.escrita[num].release(1);
                     }
                 }
+				System.out.println("Leitura concluida no arquivo " + caminho.charAt(3) + " por cliente:" + id);
                 return saida;
             } else
                 return "Arquivo invalido";
@@ -144,6 +156,7 @@ public class Servidor implements ClienteServidor {
 
     public static void main(String args[]) {
         try {
+			PRIORIDADENORMAL = Boolean.parseBoolean(args[0]);
             Servidor obj = new Servidor();
             ClienteServidor stub = (ClienteServidor) UnicastRemoteObject.exportObject(obj, 0);
             Registry registry = LocateRegistry.getRegistry();

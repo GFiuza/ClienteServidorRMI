@@ -11,12 +11,13 @@ public class Cliente {
 
     public static void main(String[] args) {
         String host = (args.length < 1) ? null : null;//args[0];
+
+        Scanner entrada = new Scanner(System.in);
+            
         try {
             Registry registry = LocateRegistry.getRegistry(host);
             ClienteServidor stub = (ClienteServidor) registry.lookup("ClienteServidor");
 
-            Scanner entrada = new Scanner(System.in);
-            
 
 			String[] tiposCaracteres = new String[3];
 			tiposCaracteres[0] = "abcdefghijklmnopqrstuvwxyz";
@@ -28,6 +29,8 @@ public class Cliente {
 			String arquivo;
 			
 			Random gerador = new Random();
+			
+			int id = Integer.parseInt(args[0]);
 			
 			for(int i=0;i<10;i++) {
 				int escolha = gerador.nextInt(3) + 1;
@@ -51,17 +54,18 @@ public class Cliente {
 					}
 					System.out.println("Palavra a ser escrita: " + escrever);
 						
-	                boolean resposta = stub.escrita(arquivo, escrever);
+	                boolean resposta = stub.escrita(arquivo, escrever,id);
 
 	                if(resposta){
 	                    System.out.println("Escrita bem sucedida");
 	                }
 				}
 				else {
-					String sresposta = stub.leitura(arquivo);
+					String sresposta = stub.leitura(arquivo,id);
                     System.out.println(sresposta);
 				}
 			}
+			entrada.nextInt();
             /*int ainda = 1;
             while (ainda == 1)
             {
@@ -91,6 +95,7 @@ public class Cliente {
         } catch (Exception e) {
             System.err.println("Capturando a exceção no Cliente: " + e.toString());
             e.printStackTrace();
+			entrada.nextInt();
         }
     }
 }
