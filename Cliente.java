@@ -10,7 +10,7 @@ public class Cliente {
     private Cliente() {}
 
     public static void main(String[] args) {
-        String host = (args.length < 1) ? null : null;//args[0];
+        String host = args[0];
 
         Scanner entrada = new Scanner(System.in);
             
@@ -30,7 +30,7 @@ public class Cliente {
 			
 			Random gerador = new Random();
 			
-			int id = Integer.parseInt(args[0]);
+			int id = Integer.parseInt(args[1]);
 			
 			for(int i=0;i<10;i++) {
 				int escolha = gerador.nextInt(3) + 1;
